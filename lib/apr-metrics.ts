@@ -11,10 +11,16 @@ export type StandardMetrics = {
   positivePHExits: number | null;
   excludedFromPHDenom: number | null;
   averageLengthOfStayDays: number | null;
-  /** Q19a1: % of adult stayers who gained or increased total income from start to annual assessment. */
+  /** Combined % of adult stayers + leavers who gained or increased total income (weighted). */
   incomeImprovementPct: number | null;
-  /** Q19a1: count of adult stayers with any income at annual assessment (denominator basis). */
+  /** Combined denominator: stayers (Q19a1) + leavers (Q19a2). */
   adultsWithAnyIncome: number | null;
+  /** Optional cohort breakdown (% improved within stayers cohort, Q19a1). */
+  stayersIncomePct: number | null;
+  stayersIncomeAdults: number | null;
+  /** Optional cohort breakdown (% improved within leavers cohort, Q19a2). */
+  leaversIncomePct: number | null;
+  leaversIncomeAdults: number | null;
 };
 
 const findRow = (q: AprQuestion | undefined, needle: string) => {
@@ -79,9 +85,19 @@ export const extractMetrics = (report: AprReport): StandardMetrics => {
   const q19a2 = report.questions["Q19a2"];
   const stayersIncome = tryIncome(q19a1);
   const leaversIncome = tryIncome(q19a2);
-  const stayersHasData = (stayersIncome.adults ?? 0) > 0;
-  const incomeImprovementPct = stayersHasData ? stayersIncome.pct : leaversIncome.pct;
-  const adultsWithAnyIncome = stayersHasData ? stayersIncome.adults : leaversIncome.adults;
+
+  // Combine the two cohorts into a single weighted-average % so the headline
+  // metric reflects everyone whose income was assessed during the period:
+  //   improved = stayers_adults * stayers_pct + leavers_adults * leavers_pct
+  //   combined_pct = improved / (stayers_adults + leavers_adults)
+  const stayersAdults = stayersIncome.adults ?? 0;
+  const leaversAdults = leaversIncome.adults ?? 0;
+  const combinedAdults = stayersAdults + leaversAdults;
+  const improvedAdults =
+    stayersAdults * ((stayersIncome.pct ?? 0) / 100) +
+    leaversAdults * ((leaversIncome.pct ?? 0) / 100);
+  const incomeImprovementPct = combinedAdults > 0 ? (improvedAdults / combinedAdults) * 100 : null;
+  const adultsWithAnyIncome = combinedAdults > 0 ? combinedAdults : null;
 
   return {
     activeClients: report.manifest.totalActiveClients,
@@ -96,6 +112,10 @@ export const extractMetrics = (report: AprReport): StandardMetrics => {
     averageLengthOfStayDays: avgLOS,
     incomeImprovementPct,
     adultsWithAnyIncome,
+    stayersIncomePct: stayersIncome.pct,
+    stayersIncomeAdults: stayersIncome.adults,
+    leaversIncomePct: leaversIncome.pct,
+    leaversIncomeAdults: leaversIncome.adults,
   };
 };
 

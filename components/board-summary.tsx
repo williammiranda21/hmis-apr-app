@@ -33,7 +33,7 @@ const fmtPct = (n: number | null | undefined) =>
 
 const fmtDuration = (days: number | null | undefined): string => {
   if (days === null || days === undefined) return "—";
-  if (days < 60) return `${Math.round(days)} d`;
+  if (days < 30) return `${Math.round(days)} d`;
   if (days < 730) return `${(days / 30).toFixed(1)} mo`;
   return `${(days / 365).toFixed(1)} yr`;
 };
@@ -252,8 +252,17 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
               value={fmtPct(m.incomeImprovementPct)}
               hint={
                 m.incomeImprovementPct !== null
-                  ? "Adult stayers who gained or increased income"
-                  : "Q19a1 data not available"
+                  ? (() => {
+                      const parts: string[] = [];
+                      if ((m.stayersIncomeAdults ?? 0) > 0 && m.stayersIncomePct !== null) {
+                        parts.push(`Stayers ${m.stayersIncomePct.toFixed(0)}% (n=${m.stayersIncomeAdults})`);
+                      }
+                      if ((m.leaversIncomeAdults ?? 0) > 0 && m.leaversIncomePct !== null) {
+                        parts.push(`Leavers ${m.leaversIncomePct.toFixed(0)}% (n=${m.leaversIncomeAdults})`);
+                      }
+                      return parts.length > 0 ? parts.join(" · ") : "Across stayers + leavers";
+                    })()
+                  : "Q19a1 / Q19a2 not available"
               }
               icon={<DollarIcon size={18} />}
               progress={m.incomeImprovementPct ?? undefined}
