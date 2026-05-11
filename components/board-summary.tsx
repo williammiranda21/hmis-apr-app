@@ -16,6 +16,12 @@ import {
   SparkleIcon,
 } from "./icons";
 import { DestinationChart, LengthOfStayChart } from "./featured-charts";
+import {
+  AgeBreakdown,
+  HouseholdBreakdown,
+  LengthOfStayBreakdown,
+  RaceBreakdown,
+} from "./compact-breakdown";
 
 const fmtNum = (n: number | null | undefined) =>
   n === null || n === undefined ? "—" : n.toLocaleString();
@@ -122,8 +128,11 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
   const retentionPct =
     m.stayers !== null && m.activeClients > 0 ? Math.round((m.stayers / m.activeClients) * 100) : null;
 
-  const q23c = report.questions["Q23c"];
+  const q7a = report.questions["Q7a"];
+  const q11 = report.questions["Q11"];
+  const q12 = report.questions["Q12"];
   const q22a1 = report.questions["Q22a1"];
+  const q23c = report.questions["Q23c"];
   const hasLeavers = (m.leavers ?? 0) > 0;
   const headlineChart = hasLeavers && q23c ? "destinations" : q22a1 ? "los" : null;
 
@@ -272,6 +281,19 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* At-a-glance breakdowns */}
+          <div className="mt-5 grid gap-4 md:grid-cols-3">
+            {q12 ? <RaceBreakdown question={q12} /> : <div />}
+            {q7a ? <HouseholdBreakdown question={q7a} /> : <div />}
+            {headlineChart === "destinations" && q22a1 ? (
+              <LengthOfStayBreakdown question={q22a1} />
+            ) : q11 ? (
+              <AgeBreakdown question={q11} />
+            ) : (
+              <div />
+            )}
           </div>
 
           {/* Top Recs + DQ findings */}
