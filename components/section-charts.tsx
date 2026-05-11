@@ -194,6 +194,9 @@ const findRow = (q: AprQuestion, needle: string) =>
     (r) => !r.isSectionHeader && r.rowLabel.toLowerCase().includes(needle.toLowerCase())
   );
 
+const totalCell = (row: ReturnType<typeof findRow>) =>
+  row?.cells.find((c) => c.colLabel.toLowerCase() === "total")?.value ?? null;
+
 export function ExitToPHCallout({
   question,
   totalLeavers,
@@ -203,11 +206,17 @@ export function ExitToPHCallout({
 }) {
   const positiveRow = findRow(question, "exiting to positive housing destinations");
   const excludedRow = findRow(question, "destinations that excluded them");
+  // Q23c already includes a row with the HUD-computed percentage. Use it
+  // directly rather than recomputing — guarantees agreement with the spec.
+  const pctRow = findRow(question, "percentage of persons exiting to positive");
 
-  const positiveTotal = positiveRow?.cells.find((c) => c.colLabel.toLowerCase() === "total")?.value ?? 0;
-  const excludedTotal = excludedRow?.cells.find((c) => c.colLabel.toLowerCase() === "total")?.value ?? 0;
+  const positiveTotal = totalCell(positiveRow) ?? 0;
+  const excludedTotal = totalCell(excludedRow) ?? 0;
   const denominator = Math.max(0, totalLeavers - excludedTotal);
-  const pct = denominator > 0 ? (positiveTotal / denominator) * 100 : null;
+  const rawPct = totalCell(pctRow);
+  // WellSky exports percentages as decimal fractions (0.565 = 56.5%).
+  const pct =
+    rawPct === null ? null : rawPct > 0 && rawPct < 1 ? rawPct * 100 : rawPct;
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5">

@@ -2,7 +2,12 @@ import type { AprQuestion } from "@/lib/apr-schema/types";
 
 const formatCell = (value: number | null, type: string): string => {
   if (value === null || value === undefined) return "—";
-  if (type === "percent") return `${value.toFixed(1)}%`;
+  if (type === "percent") {
+    // WellSky exports percentages as decimal fractions (0.565 = 56.5%).
+    // APR percentages are normally well above 1%, so scale anything in (0, 1).
+    const display = value > 0 && value < 1 ? value * 100 : value;
+    return `${display.toFixed(1)}%`;
+  }
   if (type === "currency") return `$${value.toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
   if (type === "average") return value.toLocaleString(undefined, { maximumFractionDigits: 1 });
   return value.toLocaleString();
