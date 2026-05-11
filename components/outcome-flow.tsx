@@ -1,10 +1,35 @@
 "use client";
 
-import { ResponsiveContainer, Sankey, Tooltip } from "recharts";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import type { AprQuestion, AprReport } from "@/lib/apr-schema/types";
 
-const groupBySection = (q: AprQuestion | undefined): Record<string, number> => {
-  if (!q || q.notApplicable) return {};
+const CATEGORY_COLORS: Array<{ match: string; color: string }> = [
+  { match: "permanent", color: "var(--chart-1)" },
+  { match: "temporary", color: "var(--chart-2)" },
+  { match: "institutional", color: "var(--chart-4)" },
+  { match: "homeless", color: "var(--chart-5)" },
+  { match: "other", color: "var(--chart-3)" },
+];
+
+const colorFor = (label: string): string => {
+  const lc = label.toLowerCase();
+  for (const c of CATEGORY_COLORS) {
+    if (lc.includes(c.match)) return c.color;
+  }
+  return "var(--chart-3)";
+};
+
+const groupBySection = (q: AprQuestion | undefined): Array<{ label: string; value: number }> => {
+  if (!q || q.notApplicable) return [];
   const out: Record<string, number> = {};
   for (const row of q.rows) {
     if (row.isSectionHeader || !row.sectionLabel) continue;
@@ -14,101 +39,85 @@ const groupBySection = (q: AprQuestion | undefined): Record<string, number> => {
     if (row.rowLabel.toLowerCase() === "total") continue;
     out[row.sectionLabel] = (out[row.sectionLabel] ?? 0) + totalCell.value;
   }
-  return out;
+  return Object.entries(out)
+    .map(([label, value]) => ({ label, value }))
+    .filter((d) => d.value > 0)
+    .sort((a, b) => b.value - a.value);
 };
 
-const validation = (report: AprReport, needle: string): number => {
-  const q5 = report.questions["Q5a"];
-  if (!q5) return 0;
-  const row = q5.rows.find(
-    (r) => !r.isSectionHeader && r.rowLabel.toLowerCase().includes(needle.toLowerCase())
-  );
-  return row?.cells[0]?.value ?? row?.cells[1]?.value ?? 0;
-};
+const SideCard = ({
+  title,
+  subtitle,
+  data,
+  emptyText,
+}: {
+  title: string;
+  subtitle: string;
+  data: Array<{ label: string; value: number }>;
+  emptyText: string;
+}) => (
+  <div className="rounded-2xl border border-border bg-card p-5">
+    <div className="mb-3">
+      <div className="text-sm font-semibold text-foreground">{title}</div>
+      <div className="mt-0.5 text-xs text-muted-foreground">{subtitle}</div>
+    </div>
+    <div className="h-72">
+      {data.length === 0 ? (
+        <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+          {emptyText}
+        </div>
+      ) : (
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} layout="vertical" margin={{ left: 120, right: 24, top: 8, bottom: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+            <XAxis
+              type="number"
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
+              tickLine={false}
+              axisLine={false}
+            />
+            <YAxis
+              type="category"
+              dataKey="label"
+              tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
+              width={140}
+              tickLine={false}
+              axisLine={false}
+            />
+            <Tooltip cursor={{ fill: "var(--muted)" }} />
+            <Bar dataKey="value" radius={[0, 6, 6, 0]}>
+              {data.map((d) => (
+                <Cell key={d.label} fill={colorFor(d.label)} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      )}
+    </div>
+  </div>
+);
 
-export function OutcomeFlow({ report }: { report: AprReport }) {
+export function EntryVsExitComparison({ report }: { report: AprReport }) {
   const q15 = report.questions["Q15"];
   const q23c = report.questions["Q23c"];
 
-  const entryGroups = groupBySection(q15);
-  const exitGroups = groupBySection(q23c);
-
-  const stayers = validation(report, "Number of Stayers");
-  const leavers = validation(report, "Number of Leavers");
-
-  const entryNames = Object.keys(entryGroups).filter((k) => entryGroups[k] > 0);
-  const exitNames = Object.keys(exitGroups).filter((k) => exitGroups[k] > 0);
-
-  if (entryNames.length === 0 && stayers === 0 && exitNames.length === 0) {
-    return (
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <div className="text-sm font-semibold text-foreground">Outcome flow</div>
-        <div className="mt-2 text-sm text-muted-foreground">
-          Not enough data in Q15 and Q23c to draw a flow.
-        </div>
-      </div>
-    );
-  }
-
-  const nodes: Array<{ name: string }> = [
-    ...entryNames.map((n) => ({ name: n })),
-    { name: "Total Active" },
-    { name: "Still in Program" },
-    ...exitNames.map((n) => ({ name: `Exited: ${n}` })),
-  ];
-
-  const TOTAL_IDX = entryNames.length;
-  const STAYER_IDX = entryNames.length + 1;
-  const EXIT_START = entryNames.length + 2;
-
-  const links: Array<{ source: number; target: number; value: number }> = [];
-
-  entryNames.forEach((name, i) => {
-    links.push({ source: i, target: TOTAL_IDX, value: entryGroups[name] });
-  });
-
-  if (stayers > 0) {
-    links.push({ source: TOTAL_IDX, target: STAYER_IDX, value: stayers });
-  }
-
-  exitNames.forEach((name, i) => {
-    links.push({ source: TOTAL_IDX, target: EXIT_START + i, value: exitGroups[name] });
-  });
-
-  if (entryNames.length === 0 && stayers > 0) {
-    nodes[TOTAL_IDX] = { name: `Total Active (${stayers + leavers})` };
-  }
+  const entry = groupBySection(q15);
+  const exit = groupBySection(q23c);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="mb-2 flex items-baseline justify-between gap-2">
-        <div>
-          <div className="text-sm font-semibold text-foreground">Outcome flow</div>
-          <div className="text-xs text-muted-foreground">
-            Q15 prior living situation → current status / Q23c exit destination
-          </div>
-        </div>
-        <span className="rounded-full bg-accent/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-accent">
-          Flow
-        </span>
-      </div>
-      <div className="h-[420px]">
-        <ResponsiveContainer width="100%" height="100%">
-          <Sankey
-            data={{ nodes, links }}
-            nodePadding={24}
-            nodeWidth={10}
-            margin={{ left: 120, right: 160, top: 10, bottom: 10 }}
-            link={{ stroke: "var(--accent)", strokeOpacity: 0.35 } as never}
-            node={{ stroke: "var(--accent)" } as never}
-          >
-            <Tooltip />
-          </Sankey>
-        </ResponsiveContainer>
-      </div>
-      <div className="mt-3 text-xs text-muted-foreground">
-        Note: The APR aggregates entry and exit independently, so flows pass through a shared "Total Active" node rather than tracing individuals.
-      </div>
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <SideCard
+        title="Where clients came from"
+        subtitle="Q15 · Prior living situation, grouped by category"
+        data={entry}
+        emptyText="No prior-situation data."
+      />
+      <SideCard
+        title="Where leavers went"
+        subtitle="Q23c · Exit destination, grouped by category"
+        data={exit}
+        emptyText="No leavers in this reporting period."
+      />
     </div>
   );
 }

@@ -20,7 +20,7 @@ import {
   RaceEthnicityChart,
 } from "./featured-charts";
 import { DataQualityScorecard } from "./data-quality-scorecard";
-import { OutcomeFlow } from "./outcome-flow";
+import { EntryVsExitComparison } from "./outcome-flow";
 import {
   AgeChart,
   ExitToPHCallout,
@@ -236,7 +236,7 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
                       <ExitToPHCallout totalLeavers={leavers} toPH={exitsToPH} />
                     </div>
                   )}
-                  <OutcomeFlow report={report} />
+                  <EntryVsExitComparison report={report} />
                 </>
               )}
 
