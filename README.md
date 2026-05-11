@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# APR Insight
 
-## Getting Started
+Local web tool that ingests a WellSky / Sage-format **APR (Annual Performance Report) export ZIP** and renders an interactive dashboard with AI-driven data-quality findings and performance recommendations.
 
-First, run the development server:
+## Stack
+
+- Next.js 16 (App Router, TypeScript)
+- Tailwind CSS v4
+- Recharts (visualizations)
+- jszip + papaparse (APR parsing)
+- @anthropic-ai/sdk (AI analysis)
+
+## Local development
 
 ```bash
+cd apr-app
+cp .env.local.example .env.local   # then paste your Anthropic API key
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>, drop your APR ZIP onto the upload zone.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project layout
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+apr-app/
+├── app/
+│   ├── page.tsx                 # Upload + dashboard entry
+│   ├── layout.tsx
+│   └── api/
+│       ├── parse/route.ts       # ZIP → normalized AprReport
+│       └── analyze/route.ts     # AprReport → AI findings + recommendations
+├── components/
+│   ├── upload-zone.tsx
+│   ├── dashboard.tsx
+│   ├── manifest-header.tsx
+│   ├── question-table.tsx
+│   ├── featured-charts.tsx
+│   └── ai-insights.tsx
+└── lib/
+    ├── apr-parser/              # ZIP + per-question CSV parsing
+    └── apr-schema/              # Shared TypeScript types
+```
 
-## Learn More
+## What it does
 
-To learn more about Next.js, take a look at the following resources:
+1. **Parse** — unzips the APR export and normalizes every `Q*.csv` into a single typed `AprReport` structure. Handles WellSky quirks: triple-quoted row labels, section-header rows, mixed value types per matrix.
+2. **Visualize** — featured charts for race/ethnicity (Q12), length of stay (Q22a1), exit destinations (Q23c), and household composition (Q7a); plus a generic table renderer for every other question, grouped by category.
+3. **Analyze** — sends the structured report to Claude Sonnet 4.6 with HUD APR context, returns severity-tagged data-quality findings and category-tagged performance recommendations with cited evidence.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Privacy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The APR export is **already aggregated** — no client-level identifiers leave your system. AI requests send only counts and labels.
 
-## Deploy on Vercel
+## Next steps
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Add Supabase persistence to keep history of report runs and enable trend comparison.
+- Add per-run diff view (current vs. prior period).
+- Expand featured charts to cover more questions.
+- Role-based views (case manager / leadership / board).
