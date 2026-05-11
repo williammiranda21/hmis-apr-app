@@ -155,16 +155,37 @@ export const loadReport = async (
 
   if (runErr || !run) return null;
 
-  const { data: cells, error: cellsErr } = await supabase
-    .from("apr_cells")
-    .select("*")
-    .eq("report_run_id", reportRunId)
-    .order("question_id", { ascending: true })
-    .order("row_idx", { ascending: true })
-    .order("col_idx", { ascending: true });
+  type CellRow = {
+    question_id: string;
+    row_idx: number;
+    row_label: string;
+    section_label: string | null;
+    is_section_header: boolean;
+    col_idx: number | null;
+    col_label: string | null;
+    value_numeric: number | string | null;
+    value_type: string | null;
+  };
 
-  if (cellsErr || !cells) {
-    throw new Error(`Failed to load cells: ${cellsErr?.message}`);
+  // Paginate — Supabase returns at most 1000 rows per request by default, and
+  // APR exports easily exceed that (~1500-2500 cells per report).
+  const PAGE_SIZE = 1000;
+  const cells: CellRow[] = [];
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from("apr_cells")
+      .select("*")
+      .eq("report_run_id", reportRunId)
+      .order("question_id", { ascending: true })
+      .order("row_idx", { ascending: true })
+      .order("col_idx", { ascending: true })
+      .range(offset, offset + PAGE_SIZE - 1);
+    if (error) {
+      throw new Error(`Failed to load cells: ${error.message}`);
+    }
+    if (!data || data.length === 0) break;
+    cells.push(...(data as CellRow[]));
+    if (data.length < PAGE_SIZE) break;
   }
 
   // Reconstruct AprReport shape
@@ -197,7 +218,8 @@ export const loadReport = async (
       continue;
     }
 
-    if (!q.columns.includes(c.col_label) && c.col_label) q.columns.push(c.col_label);
+    const colLabel = c.col_label ?? "";
+    if (colLabel && !q.columns.includes(colLabel)) q.columns.push(colLabel);
 
     let row = q.rows.find((r) => !r.isSectionHeader && r.rowIdx === c.row_idx);
     if (!row) {
@@ -214,8 +236,8 @@ export const loadReport = async (
       rowIdx: c.row_idx,
       rowLabel: c.row_label,
       sectionLabel: c.section_label ?? undefined,
-      colIdx: c.col_idx,
-      colLabel: c.col_label,
+      colIdx: c.col_idx ?? 0,
+      colLabel,
       value: c.value_numeric !== null ? Number(c.value_numeric) : null,
       valueType: (c.value_type ?? "count") as AprReport["questions"][string]["rows"][number]["cells"][number]["valueType"],
     });
