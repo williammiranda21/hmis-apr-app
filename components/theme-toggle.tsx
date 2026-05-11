@@ -6,7 +6,21 @@ export function ThemeToggle() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
-    const isDark = document.documentElement.classList.contains("dark");
+    // Re-sync the document class with localStorage on every page mount.
+    // Next.js App Router can overwrite the `<html>` className on
+    // client-side navigation, which would otherwise wipe the dark class
+    // we set via JS.
+    let isDark: boolean;
+    try {
+      const stored = localStorage.getItem("theme");
+      if (stored === "dark") isDark = true;
+      else if (stored === "light") isDark = false;
+      else isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    } catch {
+      isDark = document.documentElement.classList.contains("dark");
+    }
+    if (isDark) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
     setTheme(isDark ? "dark" : "light");
   }, []);
 
