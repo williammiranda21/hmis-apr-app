@@ -33,9 +33,7 @@ const fmtPct = (n: number | null | undefined) =>
 
 const fmtDuration = (days: number | null | undefined): string => {
   if (days === null || days === undefined) return "—";
-  if (days < 30) return `${Math.round(days)} d`;
-  if (days < 730) return `${(days / 30).toFixed(1)} mo`;
-  return `${(days / 365).toFixed(1)} yr`;
+  return `${Math.round(days).toLocaleString()} days`;
 };
 
 const HeroTile = ({
@@ -240,11 +238,6 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
             <HeroTile
               label="Average Length of Stay"
               value={fmtDuration(m.averageLengthOfStayDays)}
-              hint={
-                m.averageLengthOfStayDays !== null
-                  ? `${Math.round(m.averageLengthOfStayDays).toLocaleString()} days`
-                  : undefined
-              }
               icon={<ClockIcon size={18} />}
             />
             <HeroTile
