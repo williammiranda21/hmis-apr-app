@@ -8,17 +8,11 @@ import { TrendsChart, type TrendDatum } from "@/components/trends-chart";
 import { KpiCard } from "@/components/kpi-card";
 import { UsersIcon, HomeIcon, CheckCircleIcon, ShieldIcon } from "@/components/icons";
 
+import { formatAprDate } from "@/lib/date-utils";
+
 const fmtPeriod = (start: string | null, end: string | null) => {
   if (!start || !end) return "—";
-  const s = new Date(start);
-  const e = new Date(end);
-  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return start;
-  const sameYear = s.getFullYear() === e.getFullYear();
-  const sOpts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" };
-  const eOpts: Intl.DateTimeFormatOptions = sameYear
-    ? { month: "short", day: "numeric" }
-    : { month: "short", day: "numeric", year: "2-digit" };
-  return `${s.toLocaleDateString(undefined, sOpts)} – ${e.toLocaleDateString(undefined, eOpts)}`;
+  return `${formatAprDate(start, { month: "short", day: "numeric" })} – ${formatAprDate(end, { month: "short", day: "numeric", year: "2-digit" })}`;
 };
 
 export default async function ProjectTrendsPage({

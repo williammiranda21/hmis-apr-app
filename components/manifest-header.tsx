@@ -1,16 +1,10 @@
 import Link from "next/link";
 import type { AprManifest } from "@/lib/apr-schema/types";
-
-const formatDate = (s: string) => {
-  if (!s) return "—";
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-};
+import { formatAprDate } from "@/lib/date-utils";
 
 const formatRange = (start: string, end: string) => {
   if (!start || !end) return "—";
-  return `${formatDate(start)} → ${formatDate(end)}`;
+  return `${formatAprDate(start)} → ${formatAprDate(end)}`;
 };
 
 export function ManifestHeader({ manifest }: { manifest: AprManifest }) {

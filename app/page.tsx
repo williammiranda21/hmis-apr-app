@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { UploadZone } from "@/components/upload-zone";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { formatAprDate } from "@/lib/date-utils";
 
 export default async function Home() {
   const supabase = await supabaseServer();
@@ -100,7 +101,7 @@ export default async function Home() {
                   <div>
                     <div className="text-sm font-medium text-foreground">{r.project_name}</div>
                     <div className="text-xs text-muted-foreground">
-                      {r.hmis_project_type_label} · {r.report_start_date} → {r.report_end_date}
+                      {r.hmis_project_type_label} · {formatAprDate(r.report_start_date)} → {formatAprDate(r.report_end_date)}
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">

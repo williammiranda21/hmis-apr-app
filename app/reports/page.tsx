@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UploadIcon, HomeIcon } from "@/components/icons";
+import { formatAprDate } from "@/lib/date-utils";
 
 export default async function ReportsListPage() {
   const supabase = await supabaseServer();
@@ -109,7 +110,7 @@ export default async function ReportsListPage() {
                       </div>
                     </td>
                     <td className="px-5 py-3 text-muted-foreground">
-                      {r.report_start_date} → {r.report_end_date}
+                      {formatAprDate(r.report_start_date)} → {formatAprDate(r.report_end_date)}
                     </td>
                     <td className="px-5 py-3 text-right tabular-nums text-foreground">{r.total_active_clients}</td>
                     <td className="px-5 py-3 text-right tabular-nums text-foreground">{r.total_active_households}</td>

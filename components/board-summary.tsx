@@ -4,13 +4,7 @@ import Link from "next/link";
 import type { AnalysisResult, AprReport } from "@/lib/apr-schema/types";
 import type { StandardMetrics } from "@/lib/apr-metrics";
 import { ThemeToggle } from "./theme-toggle";
-
-const formatDate = (s: string) => {
-  if (!s) return "—";
-  const d = new Date(s);
-  if (Number.isNaN(d.getTime())) return s;
-  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-};
+import { formatAprDate as formatDate } from "@/lib/date-utils";
 
 const fmtNum = (n: number | null | undefined) => (n === null || n === undefined ? "—" : n.toLocaleString());
 const fmtPct = (n: number | null | undefined) =>
