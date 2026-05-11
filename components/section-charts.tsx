@@ -189,23 +189,37 @@ export function HealthInsuranceChart({ question }: { question: AprQuestion }) {
   );
 }
 
+const findRow = (q: AprQuestion, needle: string) =>
+  q.rows.find(
+    (r) => !r.isSectionHeader && r.rowLabel.toLowerCase().includes(needle.toLowerCase())
+  );
+
 export function ExitToPHCallout({
+  question,
   totalLeavers,
-  toPH,
 }: {
+  question: AprQuestion;
   totalLeavers: number;
-  toPH: number;
 }) {
-  const pct = totalLeavers > 0 ? (toPH / totalLeavers) * 100 : null;
+  const positiveRow = findRow(question, "exiting to positive housing destinations");
+  const excludedRow = findRow(question, "destinations that excluded them");
+
+  const positiveTotal = positiveRow?.cells.find((c) => c.colLabel.toLowerCase() === "total")?.value ?? 0;
+  const excludedTotal = excludedRow?.cells.find((c) => c.colLabel.toLowerCase() === "total")?.value ?? 0;
+  const denominator = Math.max(0, totalLeavers - excludedTotal);
+  const pct = denominator > 0 ? (positiveTotal / denominator) * 100 : null;
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="text-xs uppercase tracking-wider text-muted-foreground">Exits to permanent housing</div>
+      <div className="text-xs uppercase tracking-wider text-muted-foreground">
+        Exits to permanent housing
+      </div>
       <div className="mt-2 flex items-baseline gap-3">
         <span className="text-4xl font-semibold tabular-nums text-foreground">
           {pct !== null ? `${pct.toFixed(0)}%` : "—"}
         </span>
         <span className="text-sm text-muted-foreground">
-          {toPH.toLocaleString()} of {totalLeavers.toLocaleString()} leavers
+          {positiveTotal.toLocaleString()} of {denominator.toLocaleString()} leavers
         </span>
       </div>
       <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
@@ -214,8 +228,29 @@ export function ExitToPHCallout({
           style={{ width: pct !== null ? `${Math.min(100, pct)}%` : "0%" }}
         />
       </div>
-      <div className="mt-2 text-xs text-muted-foreground">
-        Permanent housing destinations include rental subsidies, owned housing, and permanent housing with friends or family.
+      <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
+        <div>
+          <div className="text-muted-foreground">Positive PH exits</div>
+          <div className="mt-0.5 text-base font-semibold tabular-nums text-foreground">
+            {positiveTotal.toLocaleString()}
+          </div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">Excluded</div>
+          <div className="mt-0.5 text-base font-semibold tabular-nums text-foreground">
+            {excludedTotal.toLocaleString()}
+          </div>
+        </div>
+        <div>
+          <div className="text-muted-foreground">Total leavers</div>
+          <div className="mt-0.5 text-base font-semibold tabular-nums text-foreground">
+            {totalLeavers.toLocaleString()}
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 text-xs text-muted-foreground">
+        HUD excludes Deceased, Data Not Collected, Client Doesn&apos;t Know/Refused, and No Exit Interview
+        from the denominator.
       </div>
     </div>
   );

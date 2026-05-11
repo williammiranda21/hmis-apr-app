@@ -92,22 +92,6 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
   const stayers = validationLookup(report, "Number of Stayers");
   const leavers = validationLookup(report, "Number of Leavers");
 
-  // % to PH from Q23c
-  const exitsToPH = useMemo(() => {
-    if (!q23c || q23c.notApplicable) return 0;
-    let sum = 0;
-    for (const row of q23c.rows) {
-      if (row.isSectionHeader) continue;
-      if (row.sectionLabel?.toLowerCase().includes("permanent")) {
-        const t = row.cells.find((c) => c.colLabel.toLowerCase() === "total");
-        if (t?.value && !row.rowLabel.toLowerCase().startsWith("subtotal") && row.rowLabel.toLowerCase() !== "total") {
-          sum += t.value;
-        }
-      }
-    }
-    return sum;
-  }, [q23c]);
-
   const sectionCharts = useMemo(() => {
     const charts: React.ReactNode[] = [];
     switch (activeKey) {
@@ -231,10 +215,8 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
 
               {activeKey === "outcomes" && (
                 <>
-                  {leavers !== null && leavers > 0 && (
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <ExitToPHCallout totalLeavers={leavers} toPH={exitsToPH} />
-                    </div>
+                  {q23c && leavers !== null && leavers > 0 && (
+                    <ExitToPHCallout question={q23c} totalLeavers={leavers} />
                   )}
                   <EntryVsExitComparison report={report} />
                 </>
