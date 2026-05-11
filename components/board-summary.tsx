@@ -245,16 +245,7 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
               value={fmtPct(m.incomeImprovementPct)}
               hint={
                 m.incomeImprovementPct !== null
-                  ? (() => {
-                      const parts: string[] = [];
-                      if ((m.stayersIncomeAdults ?? 0) > 0 && m.stayersIncomePct !== null) {
-                        parts.push(`Stayers ${m.stayersIncomePct.toFixed(0)}% (n=${m.stayersIncomeAdults})`);
-                      }
-                      if ((m.leaversIncomeAdults ?? 0) > 0 && m.leaversIncomePct !== null) {
-                        parts.push(`Leavers ${m.leaversIncomePct.toFixed(0)}% (n=${m.leaversIncomeAdults})`);
-                      }
-                      return parts.length > 0 ? parts.join(" · ") : "Across stayers + leavers";
-                    })()
+                  ? `Adult ${m.incomeCohort} who gained or increased income (n=${m.adultsWithAnyIncome ?? "—"})`
                   : "Q19a1 / Q19a2 not available"
               }
               icon={<DollarIcon size={18} />}
