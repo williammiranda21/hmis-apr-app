@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { TOOLTIP_STYLES } from "./featured-charts";
 
 export type TrendSeries = {
   key: string;
@@ -65,6 +66,7 @@ export function TrendsChart({
               tickFormatter={isPercent ? (v) => `${v}%` : undefined}
             />
             <Tooltip
+              {...TOOLTIP_STYLES}
               formatter={
                 isPercent
                   ? (v) => (typeof v === "number" ? `${v.toFixed(1)}%` : String(v))

@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import type { AprQuestion, AprReport } from "@/lib/apr-schema/types";
+import { TOOLTIP_STYLES } from "./featured-charts";
 
 const CATEGORY_COLORS: Array<{ match: string; color: string }> = [
   { match: "permanent", color: "var(--chart-1)" },
@@ -84,7 +85,7 @@ const SideCard = ({
               tickLine={false}
               axisLine={false}
             />
-            <Tooltip cursor={{ fill: "var(--muted)" }} />
+            <Tooltip cursor={{ fill: "var(--muted)" }} {...TOOLTIP_STYLES} />
             <Bar dataKey="value" radius={[0, 6, 6, 0]}>
               {data.map((d) => (
                 <Cell key={d.label} fill={colorFor(d.label)} />

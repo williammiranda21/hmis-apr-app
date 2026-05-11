@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import type { AprQuestion } from "@/lib/apr-schema/types";
+import { TOOLTIP_STYLES } from "./featured-charts";
 
 const PALETTE = [
   "var(--chart-1)",
@@ -79,7 +80,7 @@ const HorizontalBars = ({
         tickLine={false}
         axisLine={false}
       />
-      <Tooltip cursor={{ fill: "var(--muted)" }} />
+      <Tooltip cursor={{ fill: "var(--muted)" }} {...TOOLTIP_STYLES} />
       <Bar dataKey="value" fill={fillVar} radius={[0, 6, 6, 0]} />
     </BarChart>
   </ResponsiveContainer>
@@ -174,7 +175,7 @@ export function HealthInsuranceChart({ question }: { question: AprQuestion }) {
               <Cell key={idx} fill={PALETTE[idx % PALETTE.length]} />
             ))}
           </Pie>
-          <Tooltip />
+          <Tooltip {...TOOLTIP_STYLES} />
           <Legend
             layout="vertical"
             verticalAlign="middle"

@@ -26,6 +26,17 @@ const PALETTE = [
   "var(--chart-8)",
 ];
 
+export const TOOLTIP_STYLES = {
+  contentStyle: {
+    backgroundColor: "var(--card-elevated)",
+    border: "1px solid var(--border)",
+    borderRadius: 12,
+    color: "var(--foreground)",
+  },
+  itemStyle: { color: "var(--foreground)" },
+  labelStyle: { color: "var(--foreground)", fontWeight: 600 },
+};
+
 const ChartCard = ({
   title,
   subtitle,
@@ -91,7 +102,7 @@ export function RaceEthnicityChart({ question }: { question: AprQuestion }) {
               <Cell key={idx} fill={PALETTE[idx % PALETTE.length]} />
             ))}
           </Pie>
-          <Tooltip />
+          <Tooltip {...TOOLTIP_STYLES} />
           <Legend
             layout="vertical"
             verticalAlign="middle"
@@ -143,7 +154,7 @@ export function LengthOfStayChart({ question }: { question: AprQuestion }) {
             tickLine={false}
             axisLine={false}
           />
-          <Tooltip cursor={{ fill: "var(--muted)" }} />
+          <Tooltip cursor={{ fill: "var(--muted)" }} {...TOOLTIP_STYLES} />
           <Legend wrapperStyle={{ fontSize: 12 }} iconType="circle" iconSize={8} />
           <Bar dataKey="Stayers" stackId="a" fill="var(--chart-1)" radius={[0, 0, 0, 0]} />
           <Bar dataKey="Leavers" stackId="a" fill="var(--chart-3)" radius={[6, 6, 0, 0]} />
@@ -205,7 +216,7 @@ export function DestinationChart({ question }: { question: AprQuestion }) {
             tickLine={false}
             axisLine={false}
           />
-          <Tooltip cursor={{ fill: "var(--muted)" }} />
+          <Tooltip cursor={{ fill: "var(--muted)" }} {...TOOLTIP_STYLES} />
           <Bar dataKey="value" fill="var(--chart-1)" radius={[0, 6, 6, 0]} />
         </BarChart>
       </ResponsiveContainer>
@@ -312,6 +323,7 @@ export function DestinationDetailChart({ question }: { question: AprQuestion }) 
             />
             <Tooltip
               cursor={{ fill: "var(--muted)" }}
+              {...TOOLTIP_STYLES}
               formatter={(value) => [String(value ?? ""), "Leavers"]}
               labelFormatter={(label, payload) => {
                 const full = payload?.[0]?.payload?.full;
@@ -361,7 +373,7 @@ export function HouseholdCompositionChart({ question }: { question: AprQuestion 
               <Cell key={idx} fill={PALETTE[idx % PALETTE.length]} />
             ))}
           </Pie>
-          <Tooltip />
+          <Tooltip {...TOOLTIP_STYLES} />
           <Legend
             layout="vertical"
             verticalAlign="middle"
