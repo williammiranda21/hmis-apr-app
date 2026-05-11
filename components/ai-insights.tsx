@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { AnalysisResult, AprReport } from "@/lib/apr-schema/types";
 import { SparkleIcon, CheckCircleIcon, AlertIcon, InfoIcon } from "./icons";
+
+const COLLAPSE_KEY = "apr-insight.ai-insights.collapsed";
 
 const severityStyles: Record<string, { container: string; badge: string; Icon: React.ComponentType<{ className?: string; size?: number }> }> = {
   critical: {
@@ -32,6 +34,28 @@ export function AiInsights({ report, reportRunId, initialAnalysis }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(initialAnalysis ?? null);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(COLLAPSE_KEY);
+      if (stored === "1") setCollapsed(true);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
 
   const run = async () => {
     setBusy(true);
@@ -74,23 +98,46 @@ export function AiInsights({ report, reportRunId, initialAnalysis }: Props) {
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={run}
-            disabled={busy}
-            className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50"
-          >
-            {busy ? "Analyzing…" : result ? "Re-run analysis" : "Run AI analysis"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={run}
+              disabled={busy}
+              className="rounded-full bg-accent px-5 py-2 text-sm font-semibold text-accent-foreground transition-colors hover:bg-accent-hover disabled:opacity-50"
+            >
+              {busy ? "Analyzing…" : result ? "Re-run analysis" : "Run AI analysis"}
+            </button>
+            <button
+              type="button"
+              onClick={toggleCollapsed}
+              aria-label={collapsed ? "Expand AI insights" : "Collapse AI insights"}
+              aria-expanded={!collapsed}
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className={`transition-transform ${collapsed ? "" : "rotate-180"}`}
+              >
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+          </div>
         </div>
 
-        {error && (
+        {!collapsed && error && (
           <div className="mt-4 rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
             {error}
           </div>
         )}
 
-        {result && (
+        {!collapsed && result && (
           <div className="mt-6 space-y-6">
             <div className="rounded-2xl border border-border bg-background p-5">
               <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
