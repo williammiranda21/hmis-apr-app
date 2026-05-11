@@ -22,7 +22,7 @@ import {
   AgeBreakdown,
   HouseholdBreakdown,
   LengthOfStayBreakdown,
-  RaceBreakdown,
+  PriorSituationBreakdown,
 } from "./compact-breakdown";
 
 const fmtNum = (n: number | null | undefined) =>
@@ -140,7 +140,7 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
 
   const q7a = report.questions["Q7a"];
   const q11 = report.questions["Q11"];
-  const q12 = report.questions["Q12"];
+  const q15 = report.questions["Q15"];
   const q22a1 = report.questions["Q22a1"];
   const q23c = report.questions["Q23c"];
   const hasLeavers = (m.leavers ?? 0) > 0;
@@ -367,7 +367,7 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
 
           {/* At-a-glance breakdowns */}
           <div className="mt-5 grid gap-4 md:grid-cols-3">
-            {q12 ? <RaceBreakdown question={q12} /> : <div />}
+            {q15 ? <PriorSituationBreakdown question={q15} /> : <div />}
             {q7a ? <HouseholdBreakdown question={q7a} /> : <div />}
             {headlineChart === "destinations" && q22a1 ? (
               <LengthOfStayBreakdown question={q22a1} />

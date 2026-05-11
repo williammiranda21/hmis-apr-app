@@ -54,19 +54,34 @@ export const extractMetrics = (report: AprReport): StandardMetrics => {
 
   const avgLOS = findCell(q22b, "average length");
 
-  // Q19a1: pull the "Number of Adults with Any Income" row and its
-  // "Performance measure: Percent of Persons who Accomplished this
-  // Measure" column. That cell is HUD's headline income-improvement
-  // metric for stayers.
-  const anyIncomeRow = q19a1?.rows.find(
-    (r) => !r.isSectionHeader && r.rowLabel.toLowerCase().includes("number of adults with any income")
-  );
-  const incomePctCell = anyIncomeRow?.cells.find((c) =>
-    c.colLabel.toLowerCase().includes("percent of persons who accomplished")
-  );
-  const incomeImprovementPct = normalizePercent(incomePctCell?.value ?? null);
-  const adultsWithAnyIncome =
-    anyIncomeRow?.cells.find((c) => c.colLabel.toLowerCase().includes("total adults"))?.value ?? null;
+  // HUD reports income improvement per cohort: Q19a1 is stayers
+  // (annual assessment) and Q19a2 is leavers (exit). ES/TH/RRH
+  // typically have leaver data only; PSH typically has stayer data.
+  // Use whichever cohort actually has adult clients with income info.
+  const tryIncome = (
+    q: typeof q19a1
+  ): { pct: number | null; adults: number | null } => {
+    if (!q || q.notApplicable) return { pct: null, adults: null };
+    const row = q.rows.find(
+      (r) => !r.isSectionHeader && r.rowLabel.toLowerCase().includes("any income")
+    );
+    if (!row) return { pct: null, adults: null };
+    const adultsCell = row.cells.find((c) => c.colLabel.toLowerCase().includes("total adults"));
+    const pctCell = row.cells.find((c) =>
+      c.colLabel.toLowerCase().includes("percent of persons who accomplished")
+    );
+    return {
+      pct: normalizePercent(pctCell?.value ?? null),
+      adults: adultsCell?.value ?? null,
+    };
+  };
+
+  const q19a2 = report.questions["Q19a2"];
+  const stayersIncome = tryIncome(q19a1);
+  const leaversIncome = tryIncome(q19a2);
+  const stayersHasData = (stayersIncome.adults ?? 0) > 0;
+  const incomeImprovementPct = stayersHasData ? stayersIncome.pct : leaversIncome.pct;
+  const adultsWithAnyIncome = stayersHasData ? stayersIncome.adults : leaversIncome.adults;
 
   return {
     activeClients: report.manifest.totalActiveClients,

@@ -145,6 +145,32 @@ export function LengthOfStayBreakdown({ question }: { question: AprQuestion }) {
   );
 }
 
+export function PriorSituationBreakdown({ question }: { question: AprQuestion }) {
+  // Q15 has section headers (Homeless, Institutional, Temporary, Permanent, Other).
+  // For a compact card we sum totals within each section so the 5 buckets
+  // tell the "where clients came from" story without the long detail list.
+  const sections: Record<string, number> = {};
+  for (const row of question.rows) {
+    if (row.isSectionHeader || !row.sectionLabel) continue;
+    const lc = row.rowLabel.toLowerCase();
+    if (lc.startsWith("subtotal") || lc === "total") continue;
+    const total = row.cells.find((c) => c.colLabel.toLowerCase() === "total");
+    if (!total || total.value === null || total.value === 0) continue;
+    const key = row.sectionLabel.replace(/\s+Situations?$/i, "");
+    sections[key] = (sections[key] ?? 0) + total.value;
+  }
+  const rows: Row[] = Object.entries(sections).map(([label, value]) => ({ label, value }));
+  const total = rows.reduce((s, r) => s + r.value, 0);
+  return (
+    <CompactBreakdownCard
+      title="Prior Living Situation"
+      subtitle="Where clients came from before this program"
+      rows={rows}
+      totalLabel={total > 0 ? `${total.toLocaleString()} clients` : undefined}
+    />
+  );
+}
+
 export function AgeBreakdown({ question }: { question: AprQuestion }) {
   const rows = rowsTotalCol(question).filter(
     (r) => !r.label.toLowerCase().includes("data not collected") && !r.label.toLowerCase().includes("doesn")
