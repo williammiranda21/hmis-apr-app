@@ -86,7 +86,7 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
             <div className="text-base font-semibold text-foreground">APR Insight</div>
           </Link>
           <span className="text-xs text-muted-foreground">
-            / <Link href={`/reports/${reportId}`} className="hover:text-foreground">Report</Link> / Board summary
+            / <Link href={`/reports/${reportId}`} className="hover:text-foreground">Report</Link> / Executive summary
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -117,7 +117,7 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
           <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-4">
             <div>
               <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Board Summary · {report.manifest.organizationName || "Organization"}
+                Executive Summary · {report.manifest.organizationName || "Organization"}
               </div>
               <h1 className="mt-1 text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
                 {report.manifest.projectName}
