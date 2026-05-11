@@ -19,6 +19,20 @@ const cleanLabel = (raw: unknown): string => {
   return s;
 };
 
+/**
+ * WellSky CSV exports include whitespace around quoted fields in header rows
+ * (e.g. `, "Performance Measure: Adults..., Average Gain" ,`). Papaparse only
+ * recognizes a field as quoted if the quote immediately follows the delimiter,
+ * so the leading space causes it to treat the field as unquoted and split on
+ * any internal comma. Strip whitespace between delimiters and quotes so the
+ * parser sees a normal CSV.
+ */
+const preprocessCsv = (text: string): string =>
+  text
+    .replace(/([,\n\r])[ \t]+"/g, '$1"')
+    .replace(/"[ \t]+(?=[,\n\r])/g, '"')
+    .replace(/^[ \t]+"/gm, '"');
+
 const parseNumeric = (raw: unknown): number | null => {
   if (raw === null || raw === undefined) return null;
   const s = String(raw).trim().replace(/,/g, "").replace(/\$/g, "").replace(/%/g, "");
@@ -46,7 +60,7 @@ const looksLikeSectionHeader = (row: string[]): boolean => {
 };
 
 const parseManifest = (csvText: string, projectTypeLabels: Record<string, string>): AprManifest => {
-  const parsed = Papa.parse<string[]>(csvText, { skipEmptyLines: true });
+  const parsed = Papa.parse<string[]>(preprocessCsv(csvText), { skipEmptyLines: true });
   if (parsed.data.length < 2) {
     throw new Error("Q4a.csv is malformed: expected header row and data row");
   }
@@ -98,7 +112,7 @@ const parseQuestionCsv = (questionId: string, fileName: string, csvText: string)
     };
   }
 
-  const parsed = Papa.parse<string[]>(csvText, { skipEmptyLines: true });
+  const parsed = Papa.parse<string[]>(preprocessCsv(csvText), { skipEmptyLines: true });
   const data = parsed.data.filter((r) => r.length > 0 && r.some((c) => String(c).trim() !== ""));
 
   if (data.length === 0) {
