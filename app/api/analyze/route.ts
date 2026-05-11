@@ -44,22 +44,52 @@ const compactReport = (report: AprReport) => {
 
 const SYSTEM_PROMPT = `You are an HMIS data analyst expert helping a Continuum of Care (CoC) lead organization interpret an APR (Annual Performance Report) export.
 
-You have deep knowledge of HUD's CoC APR/ESG-CAPER Programming Specifications and the HMIS Data Standards. The user is providing a structured JSON representation of the APR cells.
+You have deep knowledge of HUD's CoC APR/ESG-CAPER Programming Specifications and the HMIS Data Standards. The user provides a structured JSON representation of the APR cells.
 
-Your job is to produce:
-1. **dataQualityFindings**: concrete data-quality issues (high "Data Not Collected" rates, logical inconsistencies, suspicious zeros, validation mismatches between Q5a and other tables). Use severity "critical" for blocking issues, "warning" for concerning patterns, "info" for noteworthy notes.
-2. **recommendations**: programmatic, actionable recommendations to improve performance. Each recommendation must cite specific cells/questions as evidence and propose a concrete next step the program team could take.
-3. **executiveSummary**: 2-3 paragraphs in plain language for a board/funder audience explaining how this program is performing.
+Use the submit_analysis tool to return your output. Calibrate expectations to the HMIS project type (e.g., PSH should have very high retention and long stays; ES should have shorter stays; SO/Outreach has different metrics).
 
-Use the HMIS project type to calibrate expectations (e.g., PSH should have very high retention; ES should have shorter stays; SO/Outreach has different metrics).
+Severity guidance: "critical" for blocking issues, "warning" for concerning patterns, "info" for noteworthy notes. Each recommendation must cite specific cells/questions as evidence and propose a concrete next step. The executive summary should be 2-3 short paragraphs for a board/funder audience.`;
 
-Respond ONLY with a single JSON object matching this TypeScript type, with no preamble or markdown fences:
-
-type Response = {
-  dataQualityFindings: { severity: "info" | "warning" | "critical"; questionId: string; message: string; suggestedAction?: string }[];
-  recommendations: { category: string; finding: string; evidence: string; suggestedAction: string }[];
-  executiveSummary: string;
-};`;
+const ANALYSIS_TOOL = {
+  name: "submit_analysis",
+  description: "Submit the data-quality findings, performance recommendations, and executive summary for this APR.",
+  input_schema: {
+    type: "object" as const,
+    required: ["dataQualityFindings", "recommendations", "executiveSummary"],
+    properties: {
+      executiveSummary: {
+        type: "string",
+        description: "2-3 short paragraphs in plain language for a board/funder audience.",
+      },
+      dataQualityFindings: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["severity", "questionId", "message"],
+          properties: {
+            severity: { type: "string", enum: ["info", "warning", "critical"] },
+            questionId: { type: "string" },
+            message: { type: "string" },
+            suggestedAction: { type: "string" },
+          },
+        },
+      },
+      recommendations: {
+        type: "array",
+        items: {
+          type: "object",
+          required: ["category", "finding", "evidence", "suggestedAction"],
+          properties: {
+            category: { type: "string" },
+            finding: { type: "string" },
+            evidence: { type: "string" },
+            suggestedAction: { type: "string" },
+          },
+        },
+      },
+    },
+  },
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -101,7 +131,7 @@ export async function POST(request: NextRequest) {
 
     const message = await client.messages.create({
       model: MODEL,
-      max_tokens: 2500,
+      max_tokens: 4096,
       system: [
         {
           type: "text",
@@ -109,6 +139,8 @@ export async function POST(request: NextRequest) {
           cache_control: { type: "ephemeral" },
         },
       ],
+      tools: [ANALYSIS_TOOL],
+      tool_choice: { type: "tool", name: ANALYSIS_TOOL.name },
       messages: [
         {
           role: "user",
@@ -119,20 +151,18 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    const text = message.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("");
+    const toolUse = message.content.find(
+      (b): b is Anthropic.ToolUseBlock => b.type === "tool_use" && b.name === ANALYSIS_TOOL.name
+    );
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
+    if (!toolUse) {
       return NextResponse.json(
-        { error: "AI response did not contain valid JSON.", raw: text },
+        { error: "AI did not produce a structured analysis. Stop reason: " + message.stop_reason },
         { status: 502 }
       );
     }
 
-    const parsed = JSON.parse(jsonMatch[0]) as Omit<AnalysisResult, "generatedAt" | "model">;
+    const parsed = toolUse.input as Omit<AnalysisResult, "generatedAt" | "model">;
     const result: AnalysisResult = {
       ...parsed,
       generatedAt: new Date().toISOString(),
