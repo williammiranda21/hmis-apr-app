@@ -7,25 +7,35 @@ import { loadReport, persistAnalysis } from "@/lib/supabase/persist";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MODEL = "claude-sonnet-4-6";
+const MODEL = process.env.ANTHROPIC_MODEL || "claude-haiku-4-5-20251001";
 
 const compactReport = (report: AprReport) => {
   const out: Record<string, unknown> = {
-    manifest: report.manifest,
+    manifest: {
+      project: report.manifest.projectName,
+      type: report.manifest.hmisProjectTypeLabel,
+      coc: report.manifest.cocNumber,
+      period: `${report.manifest.reportStartDate} to ${report.manifest.reportEndDate}`,
+      clients: report.manifest.totalActiveClients,
+      households: report.manifest.totalActiveHouseholds,
+    },
     questions: {} as Record<string, unknown>,
   };
   for (const [qid, q] of Object.entries(report.questions)) {
     if (q.notApplicable) continue;
     const rows = q.rows
       .filter((r) => !r.isSectionHeader)
-      .map((r) => ({
-        label: r.rowLabel,
-        section: r.sectionLabel,
-        cells: Object.fromEntries(r.cells.map((c) => [c.colLabel, c.value])),
-      }));
+      .map((r) => {
+        const cells: Record<string, number | null> = {};
+        for (const c of r.cells) {
+          if (c.value !== 0 && c.value !== null) cells[c.colLabel] = c.value;
+        }
+        return { label: r.rowLabel, cells };
+      })
+      .filter((r) => Object.keys(r.cells).length > 0);
+    if (rows.length === 0) continue;
     (out.questions as Record<string, unknown>)[qid] = {
       title: q.title,
-      columns: q.columns,
       rows,
     };
   }
@@ -91,7 +101,7 @@ export async function POST(request: NextRequest) {
 
     const message = await client.messages.create({
       model: MODEL,
-      max_tokens: 4096,
+      max_tokens: 2500,
       system: [
         {
           type: "text",
@@ -103,7 +113,7 @@ export async function POST(request: NextRequest) {
         {
           role: "user",
           content: [
-            { type: "text", text: `APR data for analysis:\n\n${JSON.stringify(compact, null, 2)}` },
+            { type: "text", text: `APR data for analysis:\n\n${JSON.stringify(compact)}` },
           ],
         },
       ],
