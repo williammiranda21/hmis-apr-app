@@ -290,7 +290,7 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
             />
           </div>
 
-          {/* Narrative + headline chart */}
+          {/* Narrative (left) + chart + recs/findings (right) */}
           <div className="mt-6 grid gap-5 lg:grid-cols-5">
             <div className="rounded-2xl border border-border bg-background p-5 lg:col-span-2">
               <div className="flex items-center gap-2">
@@ -303,12 +303,63 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
                 {narrative}
               </div>
             </div>
-            <div className="lg:col-span-3">
+            <div className="space-y-4 lg:col-span-3">
               {headlineChart === "destinations" && q23c && <DestinationChart question={q23c} />}
               {headlineChart === "los" && q22a1 && <LengthOfStayChart question={q22a1} />}
               {!headlineChart && (
-                <div className="flex h-full items-center justify-center rounded-2xl border border-dashed border-border bg-background p-8 text-center text-sm text-muted-foreground">
+                <div className="flex items-center justify-center rounded-2xl border border-dashed border-border bg-background p-8 text-center text-sm text-muted-foreground">
                   No outcome chart available — upload a report with leavers to populate this view.
+                </div>
+              )}
+
+              {(topRecs.length > 0 || topFindings.length > 0) && (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {topRecs.length > 0 && (
+                    <div className="rounded-2xl border border-border bg-background p-4">
+                      <div className="flex items-center gap-2">
+                        <SparkleIcon size={14} className="text-accent" />
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Top recommendations
+                        </div>
+                      </div>
+                      <ul className="mt-2 space-y-2">
+                        {topRecs.map((r, i) => (
+                          <li key={i} className="text-xs leading-relaxed">
+                            <span className="font-semibold text-accent">{r.category}.</span>{" "}
+                            <span className="text-foreground">{r.finding}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {topFindings.length > 0 && (
+                    <div className="rounded-2xl border border-border bg-background p-4">
+                      <div className="flex items-center gap-2">
+                        <AlertIcon size={14} className="text-warning" />
+                        <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Data quality
+                        </div>
+                      </div>
+                      <ul className="mt-2 space-y-2">
+                        {topFindings.map((f, i) => (
+                          <li key={i} className="text-xs leading-relaxed">
+                            <span
+                              className={`mr-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${
+                                f.severity === "critical"
+                                  ? "bg-danger/15 text-danger"
+                                  : f.severity === "warning"
+                                  ? "bg-warning/15 text-warning"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {f.severity}
+                            </span>
+                            <span className="text-foreground">{f.message}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -326,58 +377,6 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
               <div />
             )}
           </div>
-
-          {/* Top Recs + DQ findings */}
-          {(topRecs.length > 0 || topFindings.length > 0) && (
-            <div className="mt-5 grid gap-4 lg:grid-cols-2">
-              {topRecs.length > 0 && (
-                <div className="rounded-2xl border border-border bg-background p-4">
-                  <div className="flex items-center gap-2">
-                    <SparkleIcon size={14} className="text-accent" />
-                    <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Top recommendations
-                    </div>
-                  </div>
-                  <ul className="mt-2 space-y-2">
-                    {topRecs.map((r, i) => (
-                      <li key={i} className="text-xs leading-relaxed">
-                        <span className="font-semibold text-accent">{r.category}.</span>{" "}
-                        <span className="text-foreground">{r.finding}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              {topFindings.length > 0 && (
-                <div className="rounded-2xl border border-border bg-background p-4">
-                  <div className="flex items-center gap-2">
-                    <AlertIcon size={14} className="text-warning" />
-                    <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      Data quality
-                    </div>
-                  </div>
-                  <ul className="mt-2 space-y-2">
-                    {topFindings.map((f, i) => (
-                      <li key={i} className="text-xs leading-relaxed">
-                        <span
-                          className={`mr-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wider ${
-                            f.severity === "critical"
-                              ? "bg-danger/15 text-danger"
-                              : f.severity === "warning"
-                              ? "bg-warning/15 text-warning"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {f.severity}
-                        </span>
-                        <span className="text-foreground">{f.message}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
         </section>
       </div>
     </main>
