@@ -17,23 +17,13 @@ async function createOrgAction(formData: FormData) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: org, error: orgErr } = await supabase
-    .from("organizations")
-    .insert({ name, coc_number: cocNumber })
-    .select("id")
-    .single();
+  const { error: rpcErr } = await supabase.rpc("create_organization_for_caller", {
+    org_name: name,
+    org_coc_number: cocNumber,
+  });
 
-  if (orgErr || !org) {
-    redirect(`/onboarding?error=${encodeURIComponent(orgErr?.message ?? "Failed to create organization")}`);
-  }
-
-  const { error: profErr } = await supabase
-    .from("profiles")
-    .update({ organization_id: org.id, role: "admin" })
-    .eq("id", user.id);
-
-  if (profErr) {
-    redirect(`/onboarding?error=${encodeURIComponent(profErr.message)}`);
+  if (rpcErr) {
+    redirect(`/onboarding?error=${encodeURIComponent(rpcErr.message)}`);
   }
 
   redirect("/");
