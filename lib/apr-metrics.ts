@@ -11,6 +11,10 @@ export type StandardMetrics = {
   positivePHExits: number | null;
   excludedFromPHDenom: number | null;
   averageLengthOfStayDays: number | null;
+  /** Q19a1: % of adult stayers who gained or increased total income from start to annual assessment. */
+  incomeImprovementPct: number | null;
+  /** Q19a1: count of adult stayers with any income at annual assessment (denominator basis). */
+  adultsWithAnyIncome: number | null;
 };
 
 const findRow = (q: AprQuestion | undefined, needle: string) => {
@@ -34,6 +38,7 @@ const normalizePercent = (v: number | null): number | null => {
 
 export const extractMetrics = (report: AprReport): StandardMetrics => {
   const q5a = report.questions["Q5a"];
+  const q19a1 = report.questions["Q19a1"];
   const q22b = report.questions["Q22b"];
   const q23c = report.questions["Q23c"];
 
@@ -49,6 +54,20 @@ export const extractMetrics = (report: AprReport): StandardMetrics => {
 
   const avgLOS = findCell(q22b, "average length");
 
+  // Q19a1: pull the "Number of Adults with Any Income" row and its
+  // "Performance measure: Percent of Persons who Accomplished this
+  // Measure" column. That cell is HUD's headline income-improvement
+  // metric for stayers.
+  const anyIncomeRow = q19a1?.rows.find(
+    (r) => !r.isSectionHeader && r.rowLabel.toLowerCase().includes("number of adults with any income")
+  );
+  const incomePctCell = anyIncomeRow?.cells.find((c) =>
+    c.colLabel.toLowerCase().includes("percent of persons who accomplished")
+  );
+  const incomeImprovementPct = normalizePercent(incomePctCell?.value ?? null);
+  const adultsWithAnyIncome =
+    anyIncomeRow?.cells.find((c) => c.colLabel.toLowerCase().includes("total adults"))?.value ?? null;
+
   return {
     activeClients: report.manifest.totalActiveClients,
     activeHouseholds: report.manifest.totalActiveHouseholds,
@@ -60,6 +79,8 @@ export const extractMetrics = (report: AprReport): StandardMetrics => {
     positivePHExits: positivePH,
     excludedFromPHDenom: excluded,
     averageLengthOfStayDays: avgLOS,
+    incomeImprovementPct,
+    adultsWithAnyIncome,
   };
 };
 

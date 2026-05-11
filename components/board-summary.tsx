@@ -14,6 +14,8 @@ import {
   ClockIcon,
   AlertIcon,
   SparkleIcon,
+  DollarIcon,
+  FlameIcon,
 } from "./icons";
 import { DestinationChart, LengthOfStayChart } from "./featured-charts";
 import {
@@ -36,49 +38,32 @@ const fmtDuration = (days: number | null | undefined): string => {
   return `${(days / 365).toFixed(1)} yr`;
 };
 
-type Tone = "accent" | "neutral";
-
-const KpiTile = ({
+const HeroTile = ({
   label,
   value,
   hint,
   icon,
-  tone = "neutral",
   progress,
 }: {
   label: string;
   value: string;
   hint?: string;
   icon: React.ReactNode;
-  tone?: Tone;
   progress?: number;
 }) => (
-  <div
-    className={`relative overflow-hidden rounded-2xl border p-4 ${
-      tone === "accent"
-        ? "border-accent/30 bg-gradient-to-br from-accent/10 to-transparent"
-        : "border-border bg-card"
-    }`}
-  >
+  <div className="relative overflow-hidden rounded-2xl border border-accent/30 bg-gradient-to-br from-accent/10 to-transparent p-5">
     <div className="flex items-start justify-between gap-3">
-      <div
-        className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-          tone === "accent" ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground"
-        }`}
-      >
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent text-accent-foreground">
         {icon}
       </div>
-      {progress !== undefined && (
-        <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          target
-        </span>
-      )}
     </div>
-    <div className="mt-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <div className="mt-4 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
       {label}
     </div>
-    <div className="mt-0.5 text-3xl font-semibold tabular-nums text-foreground">{value}</div>
-    {hint && <div className="mt-0.5 text-xs text-muted-foreground">{hint}</div>}
+    <div className="mt-1 text-4xl font-semibold tabular-nums leading-none text-foreground">
+      {value}
+    </div>
+    {hint && <div className="mt-1.5 text-xs text-muted-foreground">{hint}</div>}
     {progress !== undefined && (
       <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div
@@ -87,6 +72,31 @@ const KpiTile = ({
         />
       </div>
     )}
+  </div>
+);
+
+const MiniTile = ({
+  label,
+  value,
+  hint,
+  icon,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  icon: React.ReactNode;
+}) => (
+  <div className="rounded-xl border border-border bg-card p-3">
+    <div className="flex items-center gap-2">
+      <div className="flex h-7 w-7 items-center justify-center rounded-md bg-muted text-muted-foreground">
+        {icon}
+      </div>
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </div>
+    </div>
+    <div className="mt-2 text-xl font-semibold tabular-nums leading-tight text-foreground">{value}</div>
+    {hint && <div className="text-[11px] text-muted-foreground">{hint}</div>}
   </div>
 );
 
@@ -206,56 +216,77 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
             </div>
           </div>
 
-          {/* KPIs */}
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            <KpiTile
-              label="Active Clients"
+          {/* Hero KPIs — the four metrics that matter most */}
+          <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <HeroTile
+              label="Served"
               value={fmtNum(m.activeClients)}
               hint={`${fmtNum(m.activeHouseholds)} households`}
-              icon={<UsersIcon size={16} />}
-              tone="accent"
+              icon={<UsersIcon size={18} />}
             />
-            <KpiTile
-              label="Stayers"
-              value={fmtNum(m.stayers)}
-              hint={retentionPct !== null ? `${retentionPct}% retention` : undefined}
-              icon={<CheckCircleIcon size={16} />}
-            />
-            <KpiTile
-              label="Leavers"
-              value={fmtNum(m.leavers)}
-              hint={
-                m.excludedFromPHDenom !== null && m.excludedFromPHDenom > 0
-                  ? `${m.excludedFromPHDenom} excluded from PH denom`
-                  : undefined
-              }
-              icon={<HomeIcon size={16} />}
-            />
-            <KpiTile
+            <HeroTile
               label="% to Permanent Housing"
               value={fmtPct(m.pctToPermanentHousing)}
               hint={
                 m.positivePHExits !== null && hasLeavers
-                  ? `${m.positivePHExits} of ${(m.leavers ?? 0) - (m.excludedFromPHDenom ?? 0)}`
-                  : undefined
+                  ? `${fmtNum(m.positivePHExits)} of ${fmtNum((m.leavers ?? 0) - (m.excludedFromPHDenom ?? 0))} qualifying leavers`
+                  : hasLeavers
+                  ? undefined
+                  : "No leavers this period"
               }
-              icon={<ShieldIcon size={16} />}
+              icon={<ShieldIcon size={18} />}
               progress={m.pctToPermanentHousing ?? undefined}
             />
-            <KpiTile
-              label="Avg Length of Stay"
+            <HeroTile
+              label="Average Length of Stay"
               value={fmtDuration(m.averageLengthOfStayDays)}
               hint={
                 m.averageLengthOfStayDays !== null
-                  ? `${Math.round(m.averageLengthOfStayDays)} days`
+                  ? `${Math.round(m.averageLengthOfStayDays).toLocaleString()} days`
                   : undefined
               }
-              icon={<ClockIcon size={16} />}
+              icon={<ClockIcon size={18} />}
             />
-            <KpiTile
-              label="Veterans · Chronic"
-              value={`${fmtNum(m.veterans)} · ${fmtNum(m.chronicallyHomeless)}`}
-              icon={<StarIcon size={16} />}
+            <HeroTile
+              label="Income Improvement"
+              value={fmtPct(m.incomeImprovementPct)}
+              hint={
+                m.incomeImprovementPct !== null
+                  ? "Adult stayers who gained or increased income"
+                  : "Q19a1 data not available"
+              }
+              icon={<DollarIcon size={18} />}
+              progress={m.incomeImprovementPct ?? undefined}
+            />
+          </div>
+
+          {/* Secondary KPIs */}
+          <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <MiniTile
+              label="Stayers"
+              value={fmtNum(m.stayers)}
+              hint={retentionPct !== null ? `${retentionPct}% retention` : undefined}
+              icon={<CheckCircleIcon size={14} />}
+            />
+            <MiniTile
+              label="Leavers"
+              value={fmtNum(m.leavers)}
+              hint={
+                m.excludedFromPHDenom !== null && m.excludedFromPHDenom > 0
+                  ? `${m.excludedFromPHDenom} excluded from denom`
+                  : undefined
+              }
+              icon={<HomeIcon size={14} />}
+            />
+            <MiniTile
+              label="Veterans"
+              value={fmtNum(m.veterans)}
+              icon={<StarIcon size={14} />}
+            />
+            <MiniTile
+              label="Chronically Homeless"
+              value={fmtNum(m.chronicallyHomeless)}
+              icon={<FlameIcon size={14} />}
             />
           </div>
 
