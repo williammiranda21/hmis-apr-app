@@ -13,8 +13,10 @@ export type StandardMetrics = {
   averageLengthOfStayDays: number | null;
   /** % of adults who gained or increased total income (from whichever cohort has more data). */
   incomeImprovementPct: number | null;
-  /** Denominator adults for the income metric. */
+  /** Denominator adults for the income metric (Total Adults with income info). */
   adultsWithAnyIncome: number | null;
+  /** Numerator: count of adults who actually gained or increased income. */
+  adultsImprovedIncome: number | null;
   /** Which cohort the income metric is reporting. */
   incomeCohort: "stayers" | "leavers" | null;
   /** Both cohort values, for optional display. */
@@ -67,19 +69,26 @@ export const extractMetrics = (report: AprReport): StandardMetrics => {
   // Use whichever cohort actually has adult clients with income info.
   const tryIncome = (
     q: typeof q19a1
-  ): { pct: number | null; adults: number | null } => {
-    if (!q || q.notApplicable) return { pct: null, adults: null };
+  ): { pct: number | null; adults: number | null; improved: number | null } => {
+    if (!q || q.notApplicable) return { pct: null, adults: null, improved: null };
     const row = q.rows.find(
       (r) => !r.isSectionHeader && r.rowLabel.toLowerCase().includes("any income")
     );
-    if (!row) return { pct: null, adults: null };
+    if (!row) return { pct: null, adults: null, improved: null };
     const adultsCell = row.cells.find((c) => c.colLabel.toLowerCase().includes("total adults"));
     const pctCell = row.cells.find((c) =>
       c.colLabel.toLowerCase().includes("percent of persons who accomplished")
     );
+    // "Performance Measure: Adults who Gained or Increased Income from
+    // Start to Exit, Average Gain" — for the "Number of Adults with X
+    // Income" rows this cell holds the COUNT of adults who improved.
+    const improvedCell = row.cells.find((c) =>
+      c.colLabel.toLowerCase().includes("adults who gained or increased income")
+    );
     return {
       pct: normalizePercent(pctCell?.value ?? null),
       adults: adultsCell?.value ?? null,
+      improved: improvedCell?.value ?? null,
     };
   };
 
@@ -94,18 +103,22 @@ export const extractMetrics = (report: AprReport): StandardMetrics => {
   // tables — no averaging that dilutes either number.
   let incomeImprovementPct: number | null = null;
   let adultsWithAnyIncome: number | null = null;
+  let adultsImprovedIncome: number | null = null;
   let incomeCohort: "stayers" | "leavers" | null = null;
   if (leaversAdults > stayersAdults) {
     incomeImprovementPct = leaversIncome.pct;
     adultsWithAnyIncome = leaversIncome.adults;
+    adultsImprovedIncome = leaversIncome.improved;
     incomeCohort = "leavers";
   } else if (stayersAdults > 0) {
     incomeImprovementPct = stayersIncome.pct;
     adultsWithAnyIncome = stayersIncome.adults;
+    adultsImprovedIncome = stayersIncome.improved;
     incomeCohort = "stayers";
   } else if (leaversAdults > 0) {
     incomeImprovementPct = leaversIncome.pct;
     adultsWithAnyIncome = leaversIncome.adults;
+    adultsImprovedIncome = leaversIncome.improved;
     incomeCohort = "leavers";
   }
 
@@ -122,6 +135,7 @@ export const extractMetrics = (report: AprReport): StandardMetrics => {
     averageLengthOfStayDays: avgLOS,
     incomeImprovementPct,
     adultsWithAnyIncome,
+    adultsImprovedIncome,
     incomeCohort,
     stayersIncomePct: stayersIncome.pct,
     stayersIncomeAdults: stayersIncome.adults,

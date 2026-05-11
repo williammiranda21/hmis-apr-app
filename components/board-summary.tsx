@@ -245,7 +245,7 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
               value={fmtPct(m.incomeImprovementPct)}
               hint={
                 m.incomeImprovementPct !== null
-                  ? `Adult ${m.incomeCohort} who gained or increased income (n=${m.adultsWithAnyIncome ?? "—"})`
+                  ? `${fmtNum(m.adultsImprovedIncome)} of ${fmtNum(m.adultsWithAnyIncome)} adult ${m.incomeCohort} gained or increased income`
                   : "Q19a1 / Q19a2 not available"
               }
               icon={<DollarIcon size={18} />}
