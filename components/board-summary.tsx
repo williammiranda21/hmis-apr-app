@@ -17,7 +17,7 @@ import {
   DollarIcon,
   FlameIcon,
 } from "./icons";
-import { DestinationChart, LengthOfStayChart } from "./featured-charts";
+import { DestinationDetailChart, LengthOfStayChart } from "./featured-charts";
 import {
   AgeBreakdown,
   HouseholdBreakdown,
@@ -304,7 +304,7 @@ export function BoardSummary({ report, reportId, analysis, metrics }: Props) {
               </div>
             </div>
             <div className="space-y-4 lg:col-span-3">
-              {headlineChart === "destinations" && q23c && <DestinationChart question={q23c} />}
+              {headlineChart === "destinations" && q23c && <DestinationDetailChart question={q23c} />}
               {headlineChart === "los" && q22a1 && <LengthOfStayChart question={q22a1} />}
               {!headlineChart && (
                 <div className="flex items-center justify-center rounded-2xl border border-dashed border-border bg-background p-8 text-center text-sm text-muted-foreground">

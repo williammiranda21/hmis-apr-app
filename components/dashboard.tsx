@@ -16,6 +16,7 @@ import { AiFollowup } from "./ai-followup";
 import { UsersIcon, HomeIcon, ShieldIcon, StarIcon, FlameIcon, CheckCircleIcon } from "./icons";
 import {
   DestinationChart,
+  DestinationDetailChart,
   HouseholdCompositionChart,
   LengthOfStayChart,
   RaceEthnicityChart,
@@ -116,7 +117,7 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
         if (q22a1) charts.push(<LengthOfStayChart key="q22a1" question={q22a1} />);
         break;
       case "outcomes":
-        if (q23c) charts.push(<DestinationChart key="q23c" question={q23c} />);
+        if (q23c) charts.push(<DestinationDetailChart key="q23c-detail" question={q23c} />);
         break;
     }
     return charts;
