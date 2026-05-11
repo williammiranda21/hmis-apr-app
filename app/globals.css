@@ -168,3 +168,81 @@ body {
 .recharts-legend-item-text {
   color: var(--foreground) !important;
 }
+
+/* ---------- PRINT ---------- */
+@media print {
+  :root {
+    --background: #ffffff !important;
+    --foreground: #18181b !important;
+    --card: #ffffff !important;
+    --card-foreground: #18181b !important;
+    --card-elevated: #ffffff !important;
+    --muted: #f4f4f5 !important;
+    --muted-foreground: #52525b !important;
+    --border: #d4d4d8 !important;
+    --border-strong: #a1a1aa !important;
+    --accent: #65a30d !important;
+    --accent-hover: #4d7c0f !important;
+    --accent-foreground: #ffffff !important;
+    --accent-soft: #ecfccb !important;
+  }
+
+  .dark {
+    --background: #ffffff !important;
+    --foreground: #18181b !important;
+    --card: #ffffff !important;
+    --card-foreground: #18181b !important;
+    --card-elevated: #ffffff !important;
+    --muted: #f4f4f5 !important;
+    --muted-foreground: #52525b !important;
+    --border: #d4d4d8 !important;
+    --border-strong: #a1a1aa !important;
+    --accent: #65a30d !important;
+    --accent-foreground: #ffffff !important;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    color: #18181b !important;
+  }
+
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Hide app chrome */
+  aside,
+  header.sticky {
+    display: none !important;
+  }
+
+  main {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+
+  /* Avoid breaking sections / charts across pages */
+  section,
+  .rounded-2xl,
+  .rounded-3xl,
+  table {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Tighten spacing for print */
+  section {
+    margin-bottom: 12pt !important;
+  }
+
+  /* Tables: stronger borders for legibility */
+  th,
+  td {
+    border-color: #d4d4d8 !important;
+  }
+
+  @page {
+    margin: 12mm;
+  }
+}

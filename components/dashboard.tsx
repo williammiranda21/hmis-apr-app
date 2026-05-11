@@ -12,6 +12,7 @@ import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { KpiCard } from "./kpi-card";
 import { ValidationSummary } from "./validation-summary";
+import { AiFollowup } from "./ai-followup";
 import { UsersIcon, HomeIcon, ShieldIcon, StarIcon, FlameIcon, CheckCircleIcon } from "./icons";
 import {
   DestinationChart,
@@ -140,6 +141,7 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
           title={current?.label ?? "Overview"}
           subtitle={`${report.sourceFileName} · uploaded ${new Date(report.uploadedAt).toLocaleString()}`}
           onUploadNew={() => router.push("/")}
+          showPrint
         />
 
         <main ref={mainRef} className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
@@ -198,6 +200,8 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
             </section>
 
             <AiInsights report={report} reportRunId={reportRunId} initialAnalysis={initialAnalysis} />
+
+            {reportRunId && <AiFollowup reportRunId={reportRunId} />}
 
             <section ref={sectionRef} className="space-y-6 scroll-mt-4">
               <div className="flex flex-wrap items-baseline justify-between gap-2">

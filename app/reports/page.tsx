@@ -38,6 +38,12 @@ export default async function ReportsListPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
+            href="/projects"
+            className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
+          >
+            Projects
+          </Link>
+          <Link
             href="/"
             className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted"
           >
