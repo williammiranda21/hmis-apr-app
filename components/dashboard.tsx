@@ -19,6 +19,15 @@ import {
   LengthOfStayChart,
   RaceEthnicityChart,
 } from "./featured-charts";
+import { DataQualityScorecard } from "./data-quality-scorecard";
+import { OutcomeFlow } from "./outcome-flow";
+import {
+  AgeChart,
+  ExitToPHCallout,
+  HealthInsuranceChart,
+  IncomeRangesChart,
+  PriorSituationChart,
+} from "./section-charts";
 
 type Props = {
   report: AprReport;
@@ -72,6 +81,9 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
   const q7a = report.questions["Q7a"];
   const q11 = report.questions["Q11"];
   const q12 = report.questions["Q12"];
+  const q15 = report.questions["Q15"];
+  const q17 = report.questions["Q17"];
+  const q21 = report.questions["Q21"];
   const q22a1 = report.questions["Q22a1"];
   const q23c = report.questions["Q23c"];
 
@@ -79,6 +91,22 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
   const chronic = validationLookup(report, "Number of Chronically Homeless");
   const stayers = validationLookup(report, "Number of Stayers");
   const leavers = validationLookup(report, "Number of Leavers");
+
+  // % to PH from Q23c
+  const exitsToPH = useMemo(() => {
+    if (!q23c || q23c.notApplicable) return 0;
+    let sum = 0;
+    for (const row of q23c.rows) {
+      if (row.isSectionHeader) continue;
+      if (row.sectionLabel?.toLowerCase().includes("permanent")) {
+        const t = row.cells.find((c) => c.colLabel.toLowerCase() === "total");
+        if (t?.value && !row.rowLabel.toLowerCase().startsWith("subtotal") && row.rowLabel.toLowerCase() !== "total") {
+          sum += t.value;
+        }
+      }
+    }
+    return sum;
+  }, [q23c]);
 
   const sectionCharts = useMemo(() => {
     const charts: React.ReactNode[] = [];
@@ -92,6 +120,12 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
       case "demographics":
         if (q12) charts.push(<RaceEthnicityChart key="q12" question={q12} />);
         if (q7a) charts.push(<HouseholdCompositionChart key="q7a" question={q7a} />);
+        if (q11) charts.push(<AgeChart key="q11" question={q11} />);
+        if (q15) charts.push(<PriorSituationChart key="q15" question={q15} />);
+        break;
+      case "income":
+        if (q17) charts.push(<IncomeRangesChart key="q17" question={q17} />);
+        if (q21) charts.push(<HealthInsuranceChart key="q21" question={q21} />);
         break;
       case "length-of-stay":
         if (q22a1) charts.push(<LengthOfStayChart key="q22a1" question={q22a1} />);
@@ -101,7 +135,7 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
         break;
     }
     return charts;
-  }, [activeKey, q7a, q11, q12, q22a1, q23c]);
+  }, [activeKey, q7a, q11, q12, q15, q17, q21, q22a1, q23c]);
 
   return (
     <div className="flex min-h-screen">
@@ -192,6 +226,19 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
               </div>
 
               {activeKey === "overview" && q5a && <ValidationSummary question={q5a} />}
+
+              {activeKey === "data-quality" && <DataQualityScorecard report={report} />}
+
+              {activeKey === "outcomes" && (
+                <>
+                  {leavers !== null && leavers > 0 && (
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <ExitToPHCallout totalLeavers={leavers} toPH={exitsToPH} />
+                    </div>
+                  )}
+                  <OutcomeFlow report={report} />
+                </>
+              )}
 
               {sectionCharts.length > 0 && (
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
