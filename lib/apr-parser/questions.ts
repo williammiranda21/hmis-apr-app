@@ -90,7 +90,7 @@ export const QUESTION_CATEGORIES: Array<{ key: string; label: string; questionId
   {
     key: "demographics",
     label: "Demographics",
-    questionIds: ["Q10", "Q11", "Q12", "Q13a1", "Q13a2", "Q13b1", "Q13b2", "Q13c1", "Q13c2", "Q14a", "Q14b", "Q15"],
+    questionIds: ["Q11", "Q12", "Q13a1", "Q13a2", "Q13b1", "Q13b2", "Q13c1", "Q13c2", "Q14a", "Q14b", "Q15"],
   },
   {
     key: "income",

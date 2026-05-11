@@ -36,6 +36,19 @@ export const persistReport = async (
 
   const cells: Record<string, unknown>[] = [];
   for (const q of Object.values(report.questions)) {
+    // Marker row so loadReport knows this question existed even when N/A (no data rows).
+    cells.push({
+      report_run_id: run.id,
+      question_id: q.questionId,
+      row_idx: -1,
+      row_label: "__question_marker__",
+      section_label: null,
+      is_section_header: false,
+      col_idx: null,
+      col_label: null,
+      value_numeric: null,
+      value_type: null,
+    });
     for (const row of q.rows) {
       if (row.isSectionHeader) {
         cells.push({
@@ -169,6 +182,9 @@ export const loadReport = async (
       };
     }
     const q = questions[qid];
+
+    // Skip marker rows used only to signal that an N/A question existed.
+    if (c.row_label === "__question_marker__" && c.row_idx === -1) continue;
 
     if (c.is_section_header) {
       q.rows.push({

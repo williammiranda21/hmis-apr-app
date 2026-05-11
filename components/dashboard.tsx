@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { AnalysisResult, AprReport } from "@/lib/apr-schema/types";
@@ -11,6 +11,7 @@ import { AiInsights } from "./ai-insights";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { KpiCard } from "./kpi-card";
+import { ValidationSummary } from "./validation-summary";
 import { UsersIcon, HomeIcon, ShieldIcon, StarIcon, FlameIcon, CheckCircleIcon } from "./icons";
 import {
   DestinationChart,
@@ -25,12 +26,15 @@ type Props = {
   initialAnalysis?: AnalysisResult;
 };
 
-const validationLookup = (report: AprReport, label: string): number | null => {
+const validationLookup = (report: AprReport, needle: string): number | null => {
   const q5 = report.questions["Q5a"];
   if (!q5) return null;
-  const row = q5.rows.find((r) => !r.isSectionHeader && r.rowLabel.toLowerCase().includes(label.toLowerCase()));
+  const lc = needle.toLowerCase();
+  const row = q5.rows.find(
+    (r) => !r.isSectionHeader && r.rowLabel.toLowerCase().includes(lc)
+  );
   if (!row) return null;
-  return row.cells[0]?.value ?? null;
+  return row.cells[0]?.value ?? row.cells[1]?.value ?? null;
 };
 
 export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
@@ -49,15 +53,55 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
 
   const current = presentCategories.find((c) => c.key === activeKey) ?? presentCategories[0];
 
+  const mainRef = useRef<HTMLElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (mainRef.current && sectionRef.current) {
+      const offsetTop = sectionRef.current.offsetTop - 16;
+      mainRef.current.scrollTo({ top: offsetTop, behavior: "smooth" });
+    }
+  }, [activeKey]);
+
+  const q5a = report.questions["Q5a"];
+  const q7a = report.questions["Q7a"];
+  const q11 = report.questions["Q11"];
   const q12 = report.questions["Q12"];
   const q22a1 = report.questions["Q22a1"];
   const q23c = report.questions["Q23c"];
-  const q7a = report.questions["Q7a"];
 
   const veterans = validationLookup(report, "Number of Veterans");
   const chronic = validationLookup(report, "Number of Chronically Homeless");
   const stayers = validationLookup(report, "Number of Stayers");
   const leavers = validationLookup(report, "Number of Leavers");
+
+  const sectionCharts = useMemo(() => {
+    const charts: React.ReactNode[] = [];
+    switch (activeKey) {
+      case "overview":
+        if (q7a) charts.push(<HouseholdCompositionChart key="q7a" question={q7a} />);
+        if (q12) charts.push(<RaceEthnicityChart key="q12" question={q12} />);
+        if (q22a1) charts.push(<LengthOfStayChart key="q22a1" question={q22a1} />);
+        if (q23c) charts.push(<DestinationChart key="q23c" question={q23c} />);
+        break;
+      case "demographics":
+        if (q12) charts.push(<RaceEthnicityChart key="q12" question={q12} />);
+        if (q7a) charts.push(<HouseholdCompositionChart key="q7a" question={q7a} />);
+        break;
+      case "length-of-stay":
+        if (q22a1) charts.push(<LengthOfStayChart key="q22a1" question={q22a1} />);
+        break;
+      case "outcomes":
+        if (q23c) charts.push(<DestinationChart key="q23c" question={q23c} />);
+        break;
+    }
+    return charts;
+  }, [activeKey, q7a, q11, q12, q22a1, q23c]);
 
   return (
     <div className="flex min-h-screen">
@@ -80,7 +124,7 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
           onUploadNew={() => router.push("/")}
         />
 
-        <main className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
+        <main ref={mainRef} className="flex-1 overflow-y-auto px-6 py-6 lg:px-8">
           <div className="mx-auto max-w-7xl space-y-6">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Link href="/reports" className="hover:text-foreground">
@@ -137,26 +181,24 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
 
             <AiInsights report={report} reportRunId={reportRunId} initialAnalysis={initialAnalysis} />
 
-            <section>
-              <div className="mb-3 flex items-baseline justify-between">
-                <h3 className="text-base font-semibold text-foreground">At a glance</h3>
-                <span className="text-xs text-muted-foreground">Selected featured visualizations</span>
+            <section ref={sectionRef} className="space-y-6 scroll-mt-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <div>
+                  <h2 className="text-xl font-semibold text-foreground">{current?.label}</h2>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {current?.presentQuestionIds.length ?? 0} {current?.presentQuestionIds.length === 1 ? "question" : "questions"} in this section
+                  </p>
+                </div>
               </div>
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                {q12 && <RaceEthnicityChart question={q12} />}
-                {q22a1 && <LengthOfStayChart question={q22a1} />}
-                {q23c && <DestinationChart question={q23c} />}
-                {q7a && <HouseholdCompositionChart question={q7a} />}
-              </div>
-            </section>
 
-            <section>
-              <div className="mb-3 flex items-baseline justify-between">
-                <h3 className="text-base font-semibold text-foreground">{current?.label}</h3>
-                <span className="text-xs text-muted-foreground">
-                  {current?.presentQuestionIds.length ?? 0} {current?.presentQuestionIds.length === 1 ? "question" : "questions"}
-                </span>
-              </div>
+              {activeKey === "overview" && q5a && <ValidationSummary question={q5a} />}
+
+              {sectionCharts.length > 0 && (
+                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                  {sectionCharts}
+                </div>
+              )}
+
               <div className="space-y-4">
                 {current?.presentQuestionIds.map((id) => (
                   <QuestionTable key={id} question={report.questions[id]} />
