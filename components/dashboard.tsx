@@ -206,8 +206,6 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
 
             <AiInsights report={report} reportRunId={reportRunId} initialAnalysis={initialAnalysis} />
 
-            {reportRunId && <AiFollowup reportRunId={reportRunId} />}
-
             <section ref={sectionRef} className="space-y-6 scroll-mt-4">
               <div className="sticky top-0 z-10 -mx-6 border-b border-border bg-background/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:-mx-8 lg:px-8">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -252,6 +250,8 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
           </div>
         </main>
       </div>
+
+      {reportRunId && <AiFollowup reportRunId={reportRunId} />}
     </div>
   );
 }
