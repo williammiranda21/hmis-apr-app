@@ -74,8 +74,11 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
       return;
     }
     if (mainRef.current && sectionRef.current) {
-      const offsetTop = sectionRef.current.offsetTop - 16;
-      mainRef.current.scrollTo({ top: offsetTop, behavior: "smooth" });
+      // Snap rather than smooth — smooth scrolling is too gentle to draw the
+      // eye after a sidebar click. We want the user to see the new section
+      // header land at the top of the viewport immediately.
+      const offsetTop = sectionRef.current.offsetTop - 8;
+      mainRef.current.scrollTo({ top: offsetTop, behavior: "instant" as ScrollBehavior });
     }
   }, [activeKey]);
 
@@ -206,14 +209,19 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
             {reportRunId && <AiFollowup reportRunId={reportRunId} />}
 
             <section ref={sectionRef} className="space-y-6 scroll-mt-4">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">{current?.label}</h2>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+              <div className="sticky top-0 z-10 -mx-6 border-b border-border bg-background/95 px-6 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80 lg:-mx-8 lg:px-8">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div className="flex items-baseline gap-3">
+                    <span className="inline-flex h-2 w-2 rounded-full bg-accent" aria-hidden />
+                    <h2 className="text-xl font-semibold text-foreground">{current?.label}</h2>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
                     {current?.presentQuestionIds.length ?? 0} {current?.presentQuestionIds.length === 1 ? "question" : "questions"} in this section
                   </p>
                 </div>
               </div>
+
+              <div key={activeKey} className="dashboard-section-content space-y-6">
 
               {activeKey === "overview" && q5a && <ValidationSummary question={q5a} />}
 
@@ -238,6 +246,7 @@ export function Dashboard({ report, reportRunId, initialAnalysis }: Props) {
                 {current?.presentQuestionIds.map((id) => (
                   <QuestionTable key={id} question={report.questions[id]} />
                 ))}
+              </div>
               </div>
             </section>
           </div>
